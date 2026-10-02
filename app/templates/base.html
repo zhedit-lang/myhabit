@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light">
+<meta name="theme-color" content="#f2f2f7">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="习惯打卡">
+<meta name="format-detection" content="telephone=no">
+<title>{% block title %}习惯打卡{% endblock %}</title>
+<link rel="manifest" href="/static/manifest.webmanifest">
+<link rel="apple-touch-icon" href="/static/icons/icon-180.png">
+<link rel="icon" href="/static/icons/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/static/app.css?v={{ asset_version }}">
+</head>
+<body{% if nav %} class="has-tabbar"{% endif %}>
+<header class="topbar">
+  <div class="topbar-inner">
+    <div class="topbar-text">
+      <h1 class="topbar-title">{% block heading %}{% endblock %}</h1>
+      <p class="topbar-sub">{% block subheading %}{% endblock %}</p>
+    </div>
+    {% block header_actions %}{% endblock %}
+  </div>
+</header>
+
+<main class="page">
+{% if msg %}<div class="alert ok">{{ msg }}</div>{% endif %}
+{% if err %}<div class="alert err">{{ err }}</div>{% endif %}
+{% block content %}{% endblock %}
+</main>
+
+{% if nav %}
+<nav class="tabbar">
+  <div class="tabbar-inner">
+    <a class="tab{% if nav == 'today' %} active{% endif %}" href="/">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="m8.4 12.4 2.5 2.5 4.7-5.4"/></svg>
+      <span>今日</span>
+    </a>
+    <a class="tab{% if nav == 'stats' %} active{% endif %}" href="/stats">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M5 20v-5.5M12 20V5.5M19 20v-9"/></svg>
+      <span>统计</span>
+    </a>
+    <a class="tab{% if nav == 'habits' %} active{% endif %}" href="/habits">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h10"/></svg>
+      <span>习惯</span>
+    </a>
+  </div>
+</nav>
+{% endif %}
+
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+<script src="/static/app.js?v={{ asset_version }}" defer></script>
+</body>
+</html>

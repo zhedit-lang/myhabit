@@ -1,0 +1,149 @@
+{% extends "base.html" %}
+{% block title %}习惯 · 习惯打卡{% endblock %}
+{% block heading %}习惯{% endblock %}
+{% block subheading %}添加、修改、排序{% endblock %}
+
+{% block content %}
+<div class="card">
+  <h2 class="card-title">添加新习惯</h2>
+  <form method="post" action="/habits">
+    <label class="field">
+      <span>名称</span>
+      <input type="text" name="name" placeholder="例如：背单词" maxlength="40" required>
+    </label>
+    <label class="field">
+      <span>图标（可选，填一个 emoji）</span>
+      <input type="text" name="emoji" placeholder="📚" maxlength="4">
+    </label>
+    <div class="field">
+      <span>颜色</span>
+      <div class="swatches">
+        {% for color in palette %}
+        <label class="swatch" style="--c: {{ color }}">
+          <input type="radio" name="color" value="{{ color }}"{% if loop.first %} checked{% endif %}>
+          <i></i>
+        </label>
+        {% endfor %}
+      </div>
+    </div>
+    <button class="btn block" type="submit">添加</button>
+  </form>
+</div>
+
+<div class="section-title">我的习惯（{{ habits|length }}）</div>
+
+{% if not habits %}
+  <div class="card empty"><p>还没有习惯，在上面添加一个吧</p></div>
+{% endif %}
+
+{% for habit in habits %}
+<details class="habit-item">
+  <summary>
+    {% if habit.emoji %}
+      <span class="habit-emoji">{{ habit.emoji }}</span>
+    {% else %}
+      <span class="habit-dot" style="background: {{ habit.color }}"></span>
+    {% endif %}
+    <span class="habit-name">{{ habit.name }}</span>
+    <span class="chev">编辑</span>
+  </summary>
+
+  <div class="habit-edit">
+    <form method="post" action="/habits/{{ habit.id }}/update">
+      <label class="field">
+        <span>名称</span>
+        <input type="text" name="name" value="{{ habit.name }}" maxlength="40" required>
+      </label>
+      <label class="field">
+        <span>图标</span>
+        <input type="text" name="emoji" value="{{ habit.emoji }}" maxlength="4" placeholder="可选">
+      </label>
+      <div class="field">
+        <span>颜色</span>
+        <div class="swatches">
+          {% for color in palette %}
+          <label class="swatch" style="--c: {{ color }}">
+            <input type="radio" name="color" value="{{ color }}"{% if habit.color == color %} checked{% endif %}>
+            <i></i>
+          </label>
+          {% endfor %}
+        </div>
+      </div>
+      <button class="btn block" type="submit">保存</button>
+    </form>
+
+    <div class="row-actions">
+      <form method="post" action="/habits/{{ habit.id }}/move">
+        <input type="hidden" name="dir" value="up">
+        <button class="btn secondary" type="submit" {% if loop.first %}disabled{% endif %}>↑ 上移</button>
+      </form>
+      <form method="post" action="/habits/{{ habit.id }}/move">
+        <input type="hidden" name="dir" value="down">
+        <button class="btn secondary" type="submit" {% if loop.last %}disabled{% endif %}>↓ 下移</button>
+      </form>
+      <form method="post" action="/habits/{{ habit.id }}/archive">
+        <input type="hidden" name="archived" value="1">
+        <button class="btn secondary" type="submit">归档</button>
+      </form>
+      <form method="post" action="/habits/{{ habit.id }}/delete"
+            onsubmit="return confirm('删除「{{ habit.name }}」会同时删掉它的全部打卡记录，且无法恢复。确定吗？')">
+        <button class="btn danger" type="submit">删除</button>
+      </form>
+    </div>
+    <p class="hint">归档会保留历史记录，只是不再出现在「今日」页面。</p>
+  </div>
+</details>
+{% endfor %}
+
+{% if archived %}
+<div class="section-title">已归档（{{ archived|length }}）</div>
+{% for habit in archived %}
+<div class="habit-item plain">
+  {% if habit.emoji %}
+    <span class="habit-emoji">{{ habit.emoji }}</span>
+  {% else %}
+    <span class="habit-dot" style="background: {{ habit.color }}"></span>
+  {% endif %}
+  <span class="habit-name">{{ habit.name }}</span>
+  <form method="post" action="/habits/{{ habit.id }}/archive">
+    <input type="hidden" name="archived" value="0">
+    <button class="btn secondary" type="submit">恢复</button>
+  </form>
+</div>
+{% endfor %}
+{% endif %}
+
+<div class="section-title">数据与账号</div>
+<div class="card">
+  <p class="hint">你的记录只存在服务器的一个数据库文件里，建议定期导出一份备份。</p>
+  <a class="btn secondary block" href="/export.json" download>导出全部数据（JSON）</a>
+
+  <details class="import-box">
+    <summary class="btn secondary block">从备份文件恢复…</summary>
+    <form method="post" action="/import" enctype="multipart/form-data" data-import-form class="import-form">
+      <label class="field">
+        <span>备份文件（.json）</span>
+        <input type="file" name="file" accept=".json,application/json" required>
+      </label>
+      <div class="field">
+        <span>导入方式</span>
+        <div class="radios">
+          <label class="radio">
+            <input type="radio" name="mode" value="merge" checked>
+            <span>合并<small>按习惯名称匹配：同名的把打卡记录并进去，没有的才新建。不会删除任何现有数据，同一份文件重复导入也不会产生重复记录。</small></span>
+          </label>
+          <label class="radio">
+            <input type="radio" name="mode" value="replace">
+            <span>覆盖<small>先清空现有的全部习惯和打卡记录，再用备份完全替换。清空前会自动留一份备份文件。</small></span>
+          </label>
+        </div>
+      </div>
+      <button class="btn block" type="submit">开始导入</button>
+    </form>
+  </details>
+
+  <form method="post" action="/logout" class="logout-form">
+    <button class="btn danger block" type="submit">退出登录</button>
+  </form>
+</div>
+{% endblock %}

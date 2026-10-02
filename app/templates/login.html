@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}登录 · 习惯打卡{% endblock %}
+{% block heading %}习惯打卡{% endblock %}
+{% block subheading %}输入口令开始记录{% endblock %}
+
+{% block content %}
+<div class="card login-card">
+  <form method="post" action="/login">
+    <label class="field">
+      <span>访问口令</span>
+      <input type="password" name="password" autocomplete="current-password" autofocus required>
+    </label>
+    <button class="btn block" type="submit">进入</button>
+  </form>
+  <p class="hint center">口令在服务器环境变量 <code>APP_PASSWORD</code> 中设置</p>
+</div>
+{% endblock %}

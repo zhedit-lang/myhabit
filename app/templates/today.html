@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}今日打卡 · 习惯打卡{% endblock %}
+{% block heading %}{{ today.month }}月{{ today.day }}日{% endblock %}
+{% block subheading %}周{{ WEEKDAY_SHORT[today.weekday()] }}{% endblock %}
+
+{% block content %}
+{% if not rows %}
+  <div class="card empty">
+    <div class="big">🌱</div>
+    <p>还没有添加任何习惯</p>
+    <a class="btn" href="/habits">去添加第一个习惯</a>
+  </div>
+{% else %}
+
+  <div class="card progress-card">
+    <div class="progress-head">
+      <span>今日进度</span>
+      <strong data-progress-text>{{ done_count }} / {{ rows|length }}</strong>
+    </div>
+    <div class="progress-bar"><span data-progress-bar style="width: {{ (done_count / rows|length * 100) | round(1) }}%"></span></div>
+  </div>
+
+  {% for row in rows %}
+  <button type="button"
+          class="habit-row{% if row.summary.done_today %} on{% endif %}"
+          data-toggle
+          data-habit-id="{{ row.habit.id }}"
+          data-day="{{ today.isoformat() }}"
+          style="--habit-color: {{ row.habit.color }}"
+          aria-pressed="{{ 'true' if row.summary.done_today else 'false' }}">
+    {% if row.habit.emoji %}
+      <span class="habit-emoji">{{ row.habit.emoji }}</span>
+    {% else %}
+      <span class="habit-dot" style="background: {{ row.habit.color }}"></span>
+    {% endif %}
+    <span class="habit-body">
+      <span class="habit-name">{{ row.habit.name }}</span>
+      <span class="habit-meta" data-summary-for="{{ row.habit.id }}">
+        已打卡 <b data-field="total">{{ row.summary.total }}</b> 天 ·
+        当前连续 <b data-field="current">{{ row.summary.current }}</b> 天
+      </span>
+    </span>
+    <span class="check">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.5 4.5L19 7"/></svg>
+    </span>
+  </button>
+  {% endfor %}
+
+  <p class="hint center">忘了打卡？到「统计」页可以补记过去任意一天</p>
+{% endif %}
+{% endblock %}

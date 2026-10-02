@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+{% block title %}统计 · 习惯打卡{% endblock %}
+{% block heading %}统计{% endblock %}
+{% block subheading %}{{ label }}{% endblock %}
+{% block header_actions %}
+  <a class="btn ghost" href="/export.json" download>导出</a>
+{% endblock %}
+
+{% block content %}
+{% if not stat_rows %}
+  <div class="card empty">
+    <div class="big">📊</div>
+    <p>还没有习惯，先添加一个再来看统计</p>
+    <a class="btn" href="/habits">去添加</a>
+  </div>
+{% else %}
+
+  <div class="card period-card">
+    <div class="segmented">
+      <a class="seg{% if view == 'week' %} active{% endif %}" href="/stats?view=week&anchor={{ anchor }}">本周</a>
+      <a class="seg{% if view == 'month' %} active{% endif %}" href="/stats?view=month&anchor={{ anchor }}">本月</a>
+    </div>
+    <div class="period-nav">
+      <a class="period-arrow" href="/stats?view={{ view }}&anchor={{ prev_anchor }}" aria-label="上一段">‹</a>
+      <span class="period-label">{{ label }}</span>
+      {% if can_go_next %}
+        <a class="period-arrow" href="/stats?view={{ view }}&anchor={{ next_anchor }}" aria-label="下一段">›</a>
+      {% else %}
+        <span class="period-arrow disabled">›</span>
+      {% endif %}
+    </div>
+  </div>
+
+  {% if view == 'week' %}
+    <div class="week-head">
+      <span class="week-name-spacer"></span>
+      <span class="week-cells">
+        {% for day in week_dates %}<span class="{% if day.is_today %}is-today{% endif %}">{{ day.label }}</span>{% endfor %}
+      </span>
+    </div>
+
+    {% for row in week_rows %}
+    <div class="week-row" style="--habit-color: {{ row.habit.color }}">
+      <span class="week-name">{{ row.habit.name }}</span>
+      <span class="week-cells">
+        {% for cell in row.cells %}
+          {% if cell.future %}
+            <span class="blk future{% if cell.is_today %} today{% endif %}"></span>
+          {% else %}
+            <button type="button"
+                    class="blk{% if cell.on %} on{% endif %}{% if cell.is_today %} today{% endif %}"
+                    data-toggle
+                    data-habit-id="{{ row.habit.id }}"
+                    data-day="{{ cell.iso }}"
+                    aria-label="{{ cell.iso }}"
+                    aria-pressed="{{ 'true' if cell.on else 'false' }}"></button>
+          {% endif %}
+        {% endfor %}
+      </span>
+    </div>
+    {% endfor %}
+
+    <p class="hint center">点任意色块即可补记或取消那一天的打卡</p>
+  {% else %}
+    <div class="card">
+      <div class="cal-head">
+        {% for name in WEEKDAY_SHORT %}<span>{{ name }}</span>{% endfor %}
+      </div>
+      <div class="cal-grid">
+        {% for week in month_weeks %}
+          {% for cell in week %}
+            {% if cell is none %}
+              <span class="cal-cell empty"></span>
+            {% else %}
+              <a class="cal-cell h{{ cell.level }}{% if cell.is_today %} today{% endif %}{% if cell.future %} future{% endif %}"
+                 href="/stats?view=week&anchor={{ cell.iso }}"
+                 title="{{ cell.iso }}：{{ cell.count }}/{{ habit_count }}">
+                <span class="n">{{ cell.day }}</span>
+                {% if cell.count %}<span class="c">{{ cell.count }}/{{ habit_count }}</span>{% endif %}
+              </a>
+            {% endif %}
+          {% endfor %}
+        {% endfor %}
+      </div>
+      <p class="cal-legend">
+        <span>少</span>
+        <i class="lg h0"></i><i class="lg h1"></i><i class="lg h2"></i><i class="lg h3"></i><i class="lg h4"></i>
+        <span>多</span>
+      </p>
+    </div>
+
+    <div class="card month-list">
+      {% for row in month_totals %}
+      <div class="month-line">
+        <i class="dot" style="background: {{ row.habit.color }}"></i>
+        <span class="m-name">{{ row.habit.name }}</span>
+        <span class="m-count">{{ row.count }} / {{ row.days_in_month }} 天</span>
+      </div>
+      {% endfor %}
+    </div>
+
+    <p class="hint center">点某一天可以跳到那一周，方便补记</p>
+  {% endif %}
+
+  <div class="section-title">累计数据</div>
+  <div class="card table">
+    <div class="table-head">
+      <span>习惯</span><span>累计</span><span>当前</span><span>最长</span><span>30天</span>
+    </div>
+    {% for row in stat_rows %}
+    <div class="table-row" data-summary-for="{{ row.habit.id }}">
+      <span class="t-name">
+        <i class="dot" style="background: {{ row.habit.color }}"></i>{{ row.habit.name }}
+      </span>
+      <span data-field="total">{{ row.summary.total }}</span>
+      <span data-field="current">{{ row.summary.current }}</span>
+      <span data-field="longest">{{ row.summary.longest }}</span>
+      <span>{{ (row.summary.rate30 * 100) | round | int }}%</span>
+    </div>
+    {% endfor %}
+  </div>
+
+{% endif %}
+{% endblock %}

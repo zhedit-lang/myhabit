@@ -109,9 +109,10 @@ code {
 .hint.center { text-align: center; }
 .center { text-align: center; }
 
-.empty { text-align: center; padding: 34px 20px; color: var(--text-2); }
-.empty .big { font-size: 34px; margin-bottom: 10px; }
-.empty p { margin: 0 0 16px; }
+/* 空状态只作用于卡片，别泄漏到月历的空白格（.cal-cell.empty） */
+.card.empty { text-align: center; padding: 34px 20px; color: var(--text-2); }
+.card.empty .big { font-size: 34px; margin-bottom: 10px; }
+.card.empty p { margin: 0 0 16px; }
 
 .alert {
   border-radius: 12px;
@@ -332,7 +333,8 @@ input:focus {
   white-space: nowrap;
 }
 
-.week-cells { flex: 1; display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; }
+/* min-width:0 防止日期标签把整页撑宽（窄屏兜底） */
+.week-cells { flex: 1; min-width: 0; display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 5px; }
 .week-head .week-cells { font-size: 10.5px; color: var(--muted); text-align: center; font-weight: 600; }
 .week-head .week-cells .is-today { color: var(--accent); }
 
@@ -355,7 +357,7 @@ input:focus {
 
 .cal-head {
   display: grid;
-  grid-template-columns: repeat(7, 1fr);
+  grid-template-columns: repeat(7, minmax(0, 1fr));
   gap: 6px;
   font-size: 11.5px;
   font-weight: 600;
@@ -363,10 +365,12 @@ input:focus {
   text-align: center;
   margin-bottom: 8px;
 }
-.cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
+.cal-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px; }
 
 .cal-cell {
   aspect-ratio: 1;
+  min-width: 0;
+  padding: 0;
   border-radius: 30%;
   background: #ececf1;
   display: flex;

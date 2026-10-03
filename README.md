@@ -36,10 +36,26 @@ cp .env.example .env
 > 服务器默认监听 `0.0.0.0`，所以同一个 Wi-Fi 下用手机访问
 > `http://<你 Mac 的局域网 IP>:8000` 也能直接调试。
 
-> ⚠️ 项目放在 iCloud 目录下，而 `.venv` 里有上万个碎文件，iCloud 会持续同步它们。
-> 如果觉得卡或者想避免同步问题，可以把虚拟环境放到项目外：
-> `python3 -m venv ~/.venvs/myhabit`，之后把下面的 `./.venv/bin/python` 换成
-> `~/.venvs/myhabit/bin/python` 即可。
+> ⚠️ **关于 iCloud（实测数据）**
+>
+> 项目放在 iCloud 目录下时，`.venv` 里有约 **2,800 个碎文件（44 MB）**，
+> 而你自己写的源码只有 **45 个文件**。iCloud 要同步的文件里 **92% 都是虚拟环境**，
+> 而且虚拟环境和绝对路径绑定，同步到另一台 Mac 上也用不了。
+>
+> 把虚拟环境放到项目外，同步文件数能从 3,060 降到 244：
+>
+> ```bash
+> python3 -m venv ~/.venvs/myhabit
+> ~/.venvs/myhabit/bin/python -m pip install -r requirements.txt
+> rm -rf .venv
+> ```
+>
+> 之后把下面命令里的 `./.venv/bin/python` 换成 `~/.venvs/myhabit/bin/python`。
+>
+> **注意：不能直接把 `.venv` 剪切走** —— 里面记录的是绝对路径，挪走就坏了，
+> 必须按上面的方式**重新创建**。
+>
+> 另外，本地虚拟环境只用于在 Mac 上改代码时测试。**线上部署用的是 Docker，跟它无关。**
 
 ### 环境变量
 

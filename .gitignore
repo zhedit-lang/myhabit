@@ -17,3 +17,6 @@ venv/
 .idea/
 .vscode/
 !/.vscode/extensions.json
+
+# 个人部署笔记（含私人配置，只存本地）
+DEPLOY-LOCAL.md

@@ -13,3 +13,4 @@ venv/
 .vscode/
 .idea/
 README.md
+DEPLOY-LOCAL.md

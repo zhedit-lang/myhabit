@@ -102,8 +102,6 @@ myhabit/
 
 ## 三、代码托管在 GitHub
 
-仓库：<https://github.com/zhedit-lang/myhabit>
-
 `.gitignore` 和 `.dockerignore` 都排除了 `.env` 和 `data/`，
 **登录口令和打卡数据永远不会被提交或打进镜像**。
 
@@ -117,46 +115,54 @@ git push
 
 推送会自动触发镜像构建（见下一节），之后在 NAS 上重新拉取即可生效。
 
+> 💡 **想省掉以后每次手输作者信息**：建议把 Git 邮箱设成 GitHub 的匿名地址，
+> 避免真实邮箱出现在公开的提交记录里：
+>
+> ```bash
+> git config user.email "你的用户名@users.noreply.github.com"
+> ```
+
 ---
 
-## 四、部署到飞牛 NAS
+## 四、部署（Docker 主机 / NAS）
 
-应用最终跑在**飞牛的 Docker** 里。整条链路：
+应用跑在**任意 Docker 主机**上，仓库里已经带好了自动构建和 Compose 模板。整条链路：
 
 ```
-Mac 上 git push
+git push
    ↓
 GitHub Actions 自动构建镜像（.github/workflows/docker-publish.yml）
    ↓
-推送到 Docker Hub → zhedit/myhabit:latest
+推送到 Docker Hub → <你的用户名>/myhabit:latest
    ↓
-飞牛 Docker 拉取镜像 → Compose 启动容器
+宿主机拉取镜像 → Compose 启动容器
    ↓
-飞牛 FN Connect 暴露成 HTTPS 网址 → iPhone 加到主屏幕
+反向代理 / 内网穿透暴露成 HTTPS 网址 → 手机加到主屏幕
 ```
 
 > ⚠️ **为什么要绕道 Docker Hub？**
-> 因为这台 NAS 所在的网络**连不上任何国外网站** —— `ghcr.io`、Cloudflare、Tailscale 全部不通。
-> 但飞牛的 Docker 内置了**国内加速器**，能拉 Docker Hub 的镜像。
-> 于是「GitHub 负责构建推送（它在境外出得去）+ NAS 负责拉取（走国内加速器）」这个组合才可行。
+> 如果目标主机的网络**访问不了境外站点**（`ghcr.io`、Cloudflare、Tailscale 等），
+> 就没法直接拉 GitHub 的镜像仓库。
+> 这时「GitHub 负责构建推送（它在境外出得去）+ 主机负责拉取」这个组合才可行。
+> 若你的主机能正常访问境外，也可以直接把镜像推到 `ghcr.io`。
 
 ### 1. 在 GitHub 配两个密钥
 
-打开 <https://github.com/zhedit-lang/myhabit/settings/secrets/actions> 添加：
+打开仓库的 `Settings → Secrets and variables → Actions`，添加：
 
 | 名称 | 值 |
 | --- | --- |
-| `DOCKERHUB_USERNAME` | Docker Hub 用户名（`zhedit`） |
+| `DOCKERHUB_USERNAME` | 你的 Docker Hub 用户名 |
 | `DOCKERHUB_TOKEN` | Docker Hub Access Token，在 <https://hub.docker.com/settings/security> 生成，权限选 **Read & Write** |
 
 配好之后，每次 push 到 `main` 都会自动重新构建镜像。
 
-### 2. 飞牛上拉取镜像
+### 2. 主机上拉取镜像
 
-飞牛 Docker → 左侧 **`本地镜像`** → **`添加镜像`** → **`从 URL 添加`**：
+在 Docker 管理界面里添加镜像（飞牛：**`本地镜像` → `添加镜像` → `从 URL 添加`**）：
 
-- **镜像**：`zhedit/myhabit:latest`
-- **用户 / 密码**：**都留空**（镜像是公开的）
+- **镜像**：`<你的用户名>/myhabit:latest`
+- **用户 / 密码**：都留空（镜像是公开的）
 
 ### 3. 用 Compose 创建容器
 
@@ -223,14 +229,13 @@ https://<容器ID>-0.<你的FNID>.fnos.net/login
 ### 7. 以后怎么更新
 
 ```bash
-# Mac 上
 git add .
 git commit -m "改了啥"
 git push
 ```
 
-等 GitHub Actions 跑完（约 30 秒，在 <https://github.com/zhedit-lang/myhabit/actions> 看），
-然后到飞牛 Compose 里点 **`重新部署`**（会自动拉取新镜像）。
+等 GitHub Actions 跑完（约 30 秒，在仓库的 **Actions** 页面看），
+然后到 Compose 里点 **`重新部署`**（会自动拉取新镜像）。
 
 改口令 / 改时区也一样：编辑 compose 里的环境变量，重新部署即可。
 

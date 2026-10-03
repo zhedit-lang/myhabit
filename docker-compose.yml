@@ -10,7 +10,7 @@
 
 services:
   myhabit:
-    image: zhedit/myhabit:latest
+    image: 你的DockerHub用户名/myhabit:latest
     container_name: myhabit
     restart: unless-stopped
     ports:

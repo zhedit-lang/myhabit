@@ -1,0 +1,9 @@
+# 让历史提交在 GitHub 网页上不再显示真实邮箱。
+#
+# 原理：.mailmap 不会改写提交对象本身，只影响「显示」。
+# GitHub 的提交列表、blame 等界面都会读取这个文件做映射，
+# 所以不需要 rewrite history / 强制推送，就能把旧提交的邮箱盖掉。
+#
+# 格式： 正确姓名 <正确邮箱> <历史邮箱>
+
+zhedit-lang <293876442+zhedit-lang@users.noreply.github.com> <zhedit@gmail.com>

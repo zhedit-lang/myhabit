@@ -1,6 +1,6 @@
 """应用配置。
 
-所有配置都可通过环境变量覆盖，方便在 Zeabur 等平台部署。
+所有配置都可通过环境变量覆盖，方便用 Docker / 飞牛 NAS 等部署。
 本地开发时会在项目根目录读取 .env 文件（该文件不会提交到 Git）。
 """
 
@@ -50,7 +50,8 @@ SESSION_SECRET = os.environ.get("SESSION_SECRET", "").strip() or secrets.token_h
 # 登录有效期，默认 180 天
 SESSION_MAX_AGE = int(os.environ.get("SESSION_MAX_AGE", str(180 * 24 * 3600)))
 
-# 只在 HTTPS 下发送登录 Cookie。部署到 Zeabur（HTTPS）后建议设为 1。
+# 只在 HTTPS 下发送登录 Cookie。直接以 HTTPS 对外提供服务时建议设为 1。
+# （经飞牛 FN Connect 访问时，容器内部仍是 HTTP，保持 0 即可。）
 COOKIE_SECURE = _env_bool("COOKIE_SECURE", False)
 
 # ------------------------------------------------------------------ 日期时区

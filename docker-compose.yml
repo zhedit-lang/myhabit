@@ -1,0 +1,29 @@
+# 部署模板：飞牛 NAS（或其他 Docker 主机）
+#
+# 使用前必须改这两处：
+#   APP_PASSWORD    -> 你自己的登录口令
+#   SESSION_SECRET  -> 用 `openssl rand -hex 32` 生成，别自己瞎编
+#
+# 打卡数据落在 Docker 命名卷 myhabit-data（挂到容器 /data），
+# 它独立于容器存在，重新部署 / 重建容器都不会丢；
+# 但删除这个卷就等于删掉全部打卡记录。
+
+services:
+  myhabit:
+    image: zhedit/myhabit:latest
+    container_name: myhabit
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      APP_PASSWORD: "改成你的登录口令"
+      SESSION_SECRET: "改成 openssl rand -hex 32 的输出"
+      APP_TZ: "Asia/Shanghai"
+      # 经飞牛 FN Connect 访问时浏览器侧是 HTTPS，但容器内部是 HTTP，
+      # 所以保持 0；以后若改成直连 HTTPS 再设为 1
+      COOKIE_SECURE: "0"
+    volumes:
+      - myhabit-data:/data
+
+volumes:
+  myhabit-data:

@@ -92,7 +92,7 @@ myhabit/
 ├── .venv/               # 虚拟环境（不提交）
 ├── .github/workflows/   # 自动构建镜像并推送到 Docker Hub
 ├── Dockerfile           # 容器镜像定义
-├── docker-compose.yml   # 部署到飞牛 NAS 用（模板，需改口令）
+├── docker-compose.yml   # 部署模板（需改口令）
 └── requirements.txt
 ```
 
@@ -113,7 +113,7 @@ git commit -m "说明这次改了什么"
 git push
 ```
 
-推送会自动触发镜像构建（见下一节），之后在 NAS 上重新拉取即可生效。
+推送后 GitHub Actions 会自动构建 Docker 镜像。
 
 > 💡 **想省掉以后每次手输作者信息**：建议把 Git 邮箱设成 GitHub 的匿名地址，
 > 避免真实邮箱出现在公开的提交记录里：
@@ -124,130 +124,13 @@ git push
 
 ---
 
-## 四、部署（Docker 主机 / NAS）
-
-应用跑在**任意 Docker 主机**上，仓库里已经带好了自动构建和 Compose 模板。整条链路：
-
-```
-git push
-   ↓
-GitHub Actions 自动构建镜像（.github/workflows/docker-publish.yml）
-   ↓
-推送到 Docker Hub → <你的用户名>/myhabit:latest
-   ↓
-宿主机拉取镜像 → Compose 启动容器
-   ↓
-反向代理 / 内网穿透暴露成 HTTPS 网址 → 手机加到主屏幕
-```
-
-> ⚠️ **为什么要绕道 Docker Hub？**
-> 如果目标主机的网络**访问不了境外站点**（`ghcr.io`、Cloudflare、Tailscale 等），
-> 就没法直接拉 GitHub 的镜像仓库。
-> 这时「GitHub 负责构建推送（它在境外出得去）+ 主机负责拉取」这个组合才可行。
-> 若你的主机能正常访问境外，也可以直接把镜像推到 `ghcr.io`。
-
-### 1. 在 GitHub 配两个密钥
-
-打开仓库的 `Settings → Secrets and variables → Actions`，添加：
-
-| 名称 | 值 |
-| --- | --- |
-| `DOCKERHUB_USERNAME` | 你的 Docker Hub 用户名 |
-| `DOCKERHUB_TOKEN` | Docker Hub Access Token，在 <https://hub.docker.com/settings/security> 生成，权限选 **Read & Write** |
-
-配好之后，每次 push 到 `main` 都会自动重新构建镜像。
-
-### 2. 主机上拉取镜像
-
-在 Docker 管理界面里添加镜像（飞牛：**`本地镜像` → `添加镜像` → `从 URL 添加`**）：
-
-- **镜像**：`<你的用户名>/myhabit:latest`
-- **用户 / 密码**：都留空（镜像是公开的）
-
-### 3. 用 Compose 创建容器
-
-> ⚠️ 飞牛"简单模式"的**创建容器向导里没有存储挂载和环境变量**。
-> 用它会导致：没有 `APP_PASSWORD` 应用**直接启动失败**，没有卷则**重启后数据丢失**。
-> 所以**必须走 Compose**。
-
-飞牛 Docker → 左侧 **`Compose`** → 新建项目：
-
-| 字段 | 填什么 |
-| --- | --- |
-| 项目名称 | `myhabit` |
-| 路径 | 随便选一个文件夹（**打卡数据不在这里**） |
-| 来源 | 选 **`创建docker-compose.yml`** |
-| 创建后立即启动 | 勾上 |
-
-把仓库里 `docker-compose.yml` 的内容粘进去，**改掉 `APP_PASSWORD` 和 `SESSION_SECRET`**。
-
-`SESSION_SECRET` 用这行命令生成，别自己瞎编：
-
-```bash
-openssl rand -hex 32
-```
-
-### 4. ⚠️ 数据持久化（最关键）
-
-Compose 里已经写好了挂载：
-
-```yaml
-volumes:
-  - myhabit-data:/data
-```
-
-Dockerfile 内置了 `DB_PATH=/data/myhabit.db`，所以 SQLite 文件落在 **Docker 命名卷 `myhabit-data`** 里。
-这个卷独立于容器存在，**重新部署/重建容器都不会丢数据**。
-
-**但删掉这个卷就等于删掉全部打卡记录。**
-平时备份建议用应用自带的「导出」功能（见第五节），比手动扒卷安全。
-
-### 5. 访问
-
-飞牛 **`容器`** 列表里，`myhabit` 那一行后面有个 **🔗 链接图标**，
-点开就是自动生成的网址，形如：
-
-```
-https://<容器ID>-0.<你的FNID>.fnos.net/login
-```
-
-> ⚠️ **飞牛的"登录门"**：这个网址要求**先在浏览器里登录飞牛账号**才能打开，
-> 否则返回「FN Connect 暂无权限访问该服务」（HTTP 403）。
-> 这是飞牛为规避备案做的设计，**不是应用出问题**。
-
-### 6. 加到 iPhone 主屏幕
-
-1. 用 iPhone 的 **Safari**（不能用微信内置浏览器）打开 `https://<你的FNID>.fnos.net`，**登录飞牛**
-2. 再打开应用的网址，输入 `APP_PASSWORD` 进入
-3. 点底部「分享」→ **「添加到主屏幕」**
-
-之后从桌面图标打开就是全屏，和真 App 一样。
-
-> ⚠️ 不要用「无痕模式」，否则登录状态不保存。
-> 如果提示飞牛登录过期，先去 `https://<你的FNID>.fnos.net` 重新登录再打开应用。
-
-### 7. 以后怎么更新
-
-```bash
-git add .
-git commit -m "改了啥"
-git push
-```
-
-等 GitHub Actions 跑完（约 30 秒，在仓库的 **Actions** 页面看），
-然后到 Compose 里点 **`重新部署`**（会自动拉取新镜像）。
-
-改口令 / 改时区也一样：编辑 compose 里的环境变量，重新部署即可。
-
----
-
-## 五、备份与恢复
+## 四、备份与恢复
 
 ### 导出
 
 - 统计页右上角「导出」，或习惯页底部的「导出全部数据（JSON）」，会下载一份包含全部习惯与打卡记录的 JSON
 - 也可以直接备份数据库文件：`data/myhabit.db`（以及可能存在的 `-wal` / `-shm`），
-  在飞牛上就是 Docker 命名卷 `myhabit-data` 里的内容
+  在容器里就是 Docker 命名卷 `myhabit-data` 里的内容
 
 ### 恢复
 
@@ -266,7 +149,7 @@ git push
 
 ---
 
-## 六、重新生成图标
+## 五、重新生成图标
 
 ```bash
 ./.venv/bin/python tools/make_icons.py

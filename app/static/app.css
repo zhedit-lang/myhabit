@@ -286,6 +286,36 @@ input:focus {
 }
 .seg.active { background: #fff; color: var(--text); box-shadow: 0 1px 3px rgba(0, 0, 0, .1); }
 
+/* 本月：按习惯筛选 */
+.habit-chips {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  margin: 0 0 10px;
+  padding-bottom: 2px;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.habit-chips::-webkit-scrollbar { display: none; }
+.chip {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 13px;
+  border-radius: 999px;
+  background: #ececf1;
+  color: var(--text-2);
+  font-size: 13.5px;
+  font-weight: 600;
+  white-space: nowrap;
+  text-decoration: none;
+  transition: background .18s ease, color .18s ease;
+}
+.chip.active { background: var(--habit-color, var(--accent)); color: #fff; }
+.chip-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--habit-color, var(--muted)); flex: none; }
+.chip.active .chip-dot { background: #fff; }
+
 .period-nav { display: flex; align-items: center; justify-content: space-between; }
 .period-label { font-size: 15px; font-weight: 600; font-variant-numeric: tabular-nums; }
 .period-arrow {
@@ -368,9 +398,14 @@ input:focus {
 .cal-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px; }
 
 .cal-cell {
+  width: 100%;
   aspect-ratio: 1;
   min-width: 0;
   padding: 0;
+  border: none;
+  font-family: inherit;
+  cursor: pointer;
+  touch-action: manipulation;
   border-radius: 30%;
   background: #ececf1;
   display: flex;
@@ -393,6 +428,10 @@ input:focus {
 .cal-cell.h3 { background: rgba(52, 199, 89, .68); }
 .cal-cell.h4 { background: rgba(52, 199, 89, .92); color: #fff; }
 
+/* 单习惯月历：已打卡的格子用该习惯的颜色填充 */
+.cal-cell.on { background: var(--habit-color, var(--ok)); color: #fff; }
+.cal-cell.on:active { transform: scale(.9); }
+
 .cal-legend {
   display: flex;
   align-items: center;
@@ -403,6 +442,7 @@ input:focus {
   color: var(--muted);
 }
 .cal-legend .lg { width: 12px; height: 12px; border-radius: 4px; background: #ececf1; display: block; }
+.cal-legend .lg.sep { margin-left: 10px; }
 .cal-legend .lg.h1 { background: rgba(52, 199, 89, .2); }
 .cal-legend .lg.h2 { background: rgba(52, 199, 89, .42); }
 .cal-legend .lg.h3 { background: rgba(52, 199, 89, .68); }

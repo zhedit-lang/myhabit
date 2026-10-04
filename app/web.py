@@ -141,6 +141,13 @@ def stats_page(request: Request):
     habits = db.list_habits()
     habit_ids = [habit["id"] for habit in habits]
 
+    # 本月视图可以只看某个习惯。其他视图忽略它，但链接里保留，来回切换时不会丢选择。
+    selected_habit = None
+    raw_habit = request.query_params.get("habit", "").strip()
+    if raw_habit.isdigit():
+        selected_habit = next((habit for habit in habits if habit["id"] == int(raw_habit)), None)
+    habit_query = f"&habit={selected_habit['id']}" if selected_habit else ""
+
     # 统计数字用全量历史
     all_days = db.checkin_map_for(habit_ids)
     stat_rows = [
@@ -176,6 +183,8 @@ def stats_page(request: Request):
         "stat_rows": stat_rows,
         "habit_count": habit_count,
         "can_go_next": can_go_next,
+        "selected_habit": selected_habit,
+        "habit_query": habit_query,
     }
 
     if view == "week":
@@ -240,6 +249,25 @@ def stats_page(request: Request):
             }
             for habit in habits
         ]
+
+        # 选中某个习惯时，单独展开它这个月的日历
+        if selected_habit is not None:
+            checked = period_days.get(selected_habit["id"], set())
+            context["habit_weeks"] = [
+                [
+                    None
+                    if day is None
+                    else {
+                        "iso": day.isoformat(),
+                        "day": day.day,
+                        "on": day.isoformat() in checked,
+                        "future": day > reference,
+                        "is_today": day == reference,
+                    }
+                    for day in week
+                ]
+                for week in build_month_grid(anchor)
+            ]
 
     return render(request, "stats.html", **context)
 

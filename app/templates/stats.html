@@ -17,14 +17,14 @@
 
   <div class="card period-card">
     <div class="segmented">
-      <a class="seg{% if view == 'week' %} active{% endif %}" href="/stats?view=week&anchor={{ anchor }}">本周</a>
-      <a class="seg{% if view == 'month' %} active{% endif %}" href="/stats?view=month&anchor={{ anchor }}">本月</a>
+      <a class="seg{% if view == 'week' %} active{% endif %}" href="/stats?view=week&anchor={{ anchor }}{{ habit_query }}">本周</a>
+      <a class="seg{% if view == 'month' %} active{% endif %}" href="/stats?view=month&anchor={{ anchor }}{{ habit_query }}">本月</a>
     </div>
     <div class="period-nav">
-      <a class="period-arrow" href="/stats?view={{ view }}&anchor={{ prev_anchor }}" aria-label="上一段">‹</a>
+      <a class="period-arrow" href="/stats?view={{ view }}&anchor={{ prev_anchor }}{{ habit_query }}" aria-label="上一段">‹</a>
       <span class="period-label">{{ label }}</span>
       {% if can_go_next %}
-        <a class="period-arrow" href="/stats?view={{ view }}&anchor={{ next_anchor }}" aria-label="下一段">›</a>
+        <a class="period-arrow" href="/stats?view={{ view }}&anchor={{ next_anchor }}{{ habit_query }}" aria-label="下一段">›</a>
       {% else %}
         <span class="period-arrow disabled">›</span>
       {% endif %}
@@ -62,6 +62,50 @@
 
     <p class="hint center">点任意色块即可补记或取消那一天的打卡</p>
   {% else %}
+    {% if habit_count > 1 %}
+    <div class="habit-chips">
+      <a class="chip{% if not selected_habit %} active{% endif %}"
+         href="/stats?view=month&anchor={{ anchor }}">全部</a>
+      {% for row in stat_rows %}
+      <a class="chip{% if selected_habit and selected_habit.id == row.habit.id %} active{% endif %}"
+         href="/stats?view=month&anchor={{ anchor }}&habit={{ row.habit.id }}"
+         style="--habit-color: {{ row.habit.color }}"><i class="chip-dot"></i>{{ row.habit.name }}</a>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    {% if selected_habit %}
+    <div class="card">
+      <div class="cal-head">
+        {% for name in WEEKDAY_SHORT %}<span>{{ name }}</span>{% endfor %}
+      </div>
+      <div class="cal-grid" style="--habit-color: {{ selected_habit.color }}">
+        {% for week in habit_weeks %}
+          {% for cell in week %}
+            {% if cell is none %}
+              <span class="cal-cell empty"></span>
+            {% elif cell.future %}
+              <span class="cal-cell future"><span class="n">{{ cell.day }}</span></span>
+            {% else %}
+              <button type="button"
+                      class="cal-cell{% if cell.on %} on{% endif %}{% if cell.is_today %} today{% endif %}"
+                      data-toggle
+                      data-habit-id="{{ selected_habit.id }}"
+                      data-day="{{ cell.iso }}"
+                      aria-label="{{ cell.iso }}"
+                      aria-pressed="{{ 'true' if cell.on else 'false' }}"><span class="n">{{ cell.day }}</span></button>
+            {% endif %}
+          {% endfor %}
+        {% endfor %}
+      </div>
+      <p class="cal-legend">
+        <i class="lg" style="background: {{ selected_habit.color }}"></i><span>已打卡</span>
+        <i class="lg sep"></i><span>未打卡</span>
+      </p>
+    </div>
+
+    <p class="hint center">点某一天可以补记或取消「{{ selected_habit.name }}」的打卡</p>
+    {% else %}
     <div class="card">
       <div class="cal-head">
         {% for name in WEEKDAY_SHORT %}<span>{{ name }}</span>{% endfor %}
@@ -100,6 +144,7 @@
     </div>
 
     <p class="hint center">点某一天可以跳到那一周，方便补记</p>
+    {% endif %}
   {% endif %}
 
   <div class="section-title">累计数据</div>

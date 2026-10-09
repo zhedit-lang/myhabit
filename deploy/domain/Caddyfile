@@ -1,0 +1,13 @@
+# Caddy 会自动为 {$DOMAIN} 申请并续期 Let's Encrypt 证书，
+# 并把 80 端口上的请求永久重定向到 443（HTTPS）。
+#
+# 想接收证书到期提醒邮件，取消下面三行注释并填上你的邮箱
+# （不填也能正常签发和自动续期，只是收不到提醒）：
+# {
+# 	email you@example.com
+# }
+
+{$DOMAIN} {
+	encode gzip
+	reverse_proxy myhabit:8000
+}

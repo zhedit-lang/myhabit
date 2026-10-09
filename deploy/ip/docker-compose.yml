@@ -1,0 +1,38 @@
+# 无域名方案：直接用 http://<服务器IP>:8000 访问
+#
+# 步骤：
+#   cp .env.example .env   ->  填 APP_PASSWORD / SESSION_SECRET  ->  docker compose up -d
+#
+# ⚠️ 这是 HTTP（明文）方案：登录口令会以明文经过网络传输。
+#    以后有了域名，建议改用 ../domain/ 里的方案（自动 HTTPS）。
+
+name: myhabit
+
+services:
+  myhabit:
+    image: zhedit/myhabit:latest
+    container_name: myhabit
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      APP_PASSWORD: "${APP_PASSWORD:?请在 .env 里设置 APP_PASSWORD}"
+      SESSION_SECRET: "${SESSION_SECRET:?请在 .env 里设置 SESSION_SECRET}"
+      APP_TZ: "${APP_TZ:-Asia/Shanghai}"
+      # 没有 HTTPS，登录 Cookie 不能带 Secure 标记
+      COOKIE_SECURE: "0"
+    volumes:
+      - myhabit-data:/data
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/healthz')"
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+volumes:
+  myhabit-data:

@@ -1,0 +1,56 @@
+# 云服务器（VPS）部署：myhabit 应用 + Caddy 自动 HTTPS
+#
+# 完整步骤见项目根目录 DEPLOY-VPS.md。最简流程：
+#   cp .env.example .env   ->  填好三个必填项  ->  docker compose up -d
+#
+# 只有 Caddy 对外暴露 80/443；应用端口 8000 只在 Docker 内网可见。
+# 打卡数据在命名卷 myhabit-data 里，重新部署不会丢。
+
+name: myhabit
+
+services:
+  myhabit:
+    image: zhedit/myhabit:latest
+    container_name: myhabit
+    restart: unless-stopped
+    environment:
+      APP_PASSWORD: "${APP_PASSWORD:?请在 .env 里设置 APP_PASSWORD}"
+      SESSION_SECRET: "${SESSION_SECRET:?请在 .env 里设置 SESSION_SECRET}"
+      APP_TZ: "${APP_TZ:-Asia/Shanghai}"
+      # 对外是 HTTPS，登录 Cookie 必须带 Secure 标记
+      COOKIE_SECURE: "1"
+    volumes:
+      - myhabit-data:/data
+    expose:
+      - "8000"
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/healthz')"
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  caddy:
+    image: caddy:2-alpine
+    container_name: myhabit-caddy
+    restart: unless-stopped
+    depends_on:
+      - myhabit
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      DOMAIN: "${DOMAIN:?请在 .env 里设置 DOMAIN}"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+
+volumes:
+  myhabit-data:
+  caddy-data:
+  caddy-config:

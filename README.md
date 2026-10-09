@@ -92,7 +92,9 @@ myhabit/
 ├── .venv/               # 虚拟环境（不提交）
 ├── .github/workflows/   # 自动构建镜像并推送到 Docker Hub
 ├── Dockerfile           # 容器镜像定义
-├── docker-compose.yml   # 部署模板（需改口令）
+├── deploy/              # 云服务器部署配置（ip/ 无域名、domain/ 有域名，见 DEPLOY-VPS.md）
+├── DEPLOY-VPS.md        # 部署到云服务器（VPS）
+├── docker-compose.yml   # 旧：飞牛 NAS 部署模板
 └── requirements.txt
 ```
 
@@ -157,3 +159,26 @@ git push
 
 脚本用标准库直接写 PNG，不依赖 Pillow。要改配色或对勾形状，编辑
 `tools/make_icons.py` 顶部的 `BG` / `CHECK_POINTS` / `JOBS` 即可。
+
+---
+
+## 六、部署到服务器
+
+想让手机随时打开就能用，需要一台云服务器。**最低 1 核 1 GB** 即可，选**香港**（或其他免备案海外地区）。
+
+完整步骤见 **[DEPLOY-VPS.md](./DEPLOY-VPS.md)**，配套配置在 [`deploy/`](./deploy/) 下，**按有无域名分两条路线**：
+
+| 路线 | 目录 | 访问地址 | 适合 |
+| --- | --- | --- | --- |
+| A · 无域名 | [`deploy/ip/`](./deploy/ip/) | `http://<服务器IP>:8000` | 先跑起来，零成本 |
+| B · 有域名 | [`deploy/domain/`](./deploy/domain/) | `https://habit.你的域名.com` | 长期用（自动 HTTPS，推荐） |
+
+两条路线**共用同一个数据卷**，所以以后可以从 A 无缝升级到 B，数据不丢。
+
+最简流程（以路线 A 为例）：
+
+```bash
+cd deploy/ip
+cp .env.example .env      # 填好 APP_PASSWORD / SESSION_SECRET
+docker compose up -d
+```
